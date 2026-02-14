@@ -18,7 +18,12 @@ We have optimized the installation to skip the heavy 2GB Visual Studio Build Too
 
 ### 2. Manual Setup (The "No Build Tools" way)
 If you are setting up manually and want facial recognition without installing C++ compilers:
-1.  **Download the dlib wheel**: Find the `.whl` file for your Python version (e.g., `dlib-19.24.1-cp311-cp311-win_amd64.whl` for Python 3.11).
+1.  **Download the dlib wheel**:
+    *   **Option A (Easy)**: Run the helper script in the backend folder:
+        ```powershell
+        python download_dlib_wheel.py
+        ```
+    *   **Option B (Manual)**: Find the `.whl` file for your Python version (e.g., `dlib-19.24.1-cp311-cp311-win_amd64.whl` for Python 3.11) from GitHub or other sources.
 2.  **Install it in your venv**:
     ```powershell
     cd backend

@@ -146,11 +146,19 @@ function Register() {
         setLoading(true);
 
         try {
+            const mobileValue = formData.mobile.trim();
+            if (!/^\+?[0-9]{10,15}$/.test(mobileValue)) {
+                setError('Mobile number must be 10-15 digits, optional + at the start.');
+                setLoading(false);
+                return;
+            }
+
             const deviceFingerprint = getDeviceFingerprint();
             const ipAddress = await getIPAddress();
 
             const userData = {
                 ...formData,
+                mobile: mobileValue,
                 face_embedding: faceEmbedding,
             };
 
@@ -298,13 +306,19 @@ function Register() {
                     <div className="form-group">
                         <label style={{ color: '#000000' }}>Mobile Number</label>
                         <input
-                            type="tel"
+                            type="text"
                             className="input-field"
                             value={formData.mobile}
-                            onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                            onChange={(e) => {
+                                const sanitized = e.target.value.replace(/[^0-9+]/g, '');
+                                const normalized = sanitized.startsWith('+')
+                                    ? `+${sanitized.slice(1).replace(/\+/g, '')}`
+                                    : sanitized.replace(/\+/g, '');
+                                setFormData({ ...formData, mobile: normalized });
+                            }}
                             required
                             placeholder="+1234567890"
-                            pattern="^\\+?\\d{10,15}$"
+                            pattern="[+]?[0-9]{10,15}"
                             title="Enter 10-15 digits. Optional + at start (e.g., +1234567890 or 9876543210)"
                         />
                         <small style={{ color: '#000000', fontSize: '0.875rem' }}>

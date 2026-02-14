@@ -14,10 +14,17 @@ const api = axios.create({
 // Add token to requests
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('access_token');
+    const isPublicAuthRoute = config.url && [
+        '/api/auth/register',
+        '/api/auth/login',
+        '/api/auth/login-auto',
+        '/api/auth/refresh',
+    ].some((route) => config.url.includes(route));
+
     if (token) {
         // console.log(`[API] Attaching token to ${config.url}`);
         config.headers.Authorization = `Bearer ${token}`;
-    } else {
+    } else if (!isPublicAuthRoute) {
         console.warn(`[API] No token found for ${config.url}`);
     }
     return config;

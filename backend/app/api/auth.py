@@ -19,7 +19,7 @@ from ..core.security import (
     decode_token, generate_device_fingerprint, encrypt_embedding
 )
 from ..core.face_verification import (
-    is_face_recognition_available, validate_embedding_quality, find_user_by_face
+    validate_embedding_quality, find_user_by_face
 )
 from ..api.models import (
     UserRegister, UserLogin, FaceAutoLogin, TokenResponse, RefreshTokenRequest,
@@ -122,8 +122,23 @@ async def register(
         result = await db.users.insert_one(user_doc)
         user_id = str(result.inserted_id)
         
+        # Create a session for freshly registered users so monitoring APIs work
+        session_doc = {
+            "user_id": user_id,
+            "username": user_data.username,
+            "device_fingerprint": f"register:{secrets.token_hex(16)}",
+            "ip_address": None,
+            "browser_signature": "registration_flow",
+            "created_at": datetime.utcnow().isoformat(),
+            "threat_score": 0,
+            "is_locked": False,
+            "requires_facial_captcha": False
+        }
+        session_result = await db.sessions.insert_one(session_doc)
+        session_id = str(session_result.inserted_id)
+
         # Create tokens
-        token_data = {"sub": user_id, "username": user_data.username}
+        token_data = {"sub": user_id, "username": user_data.username, "session_id": session_id}
         access_token = create_access_token(token_data)
         refresh_token = create_refresh_token(token_data)
         
@@ -244,12 +259,6 @@ async def auto_login(
     Face-based auto-login
     Finds user by face match, then requires password + facial CAPTCHA
     """
-    if not is_face_recognition_available():
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Face recognition not available. Please install face_recognition library."
-        )
-    
     # Validate embedding
     is_valid, error_msg = validate_embedding_quality(face_data.face_embedding)
     if not is_valid:
